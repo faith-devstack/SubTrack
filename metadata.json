@@ -1,0 +1,6 @@
+{
+  "name": "SubTrack",
+  "description": "Take control of every subscription.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

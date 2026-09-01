@@ -1,0 +1,47 @@
+{
+  "entities": {
+    "subscription": {
+      "title": "Subscription",
+      "description": "A user's recurring expense or subscription",
+      "type": "object",
+      "properties": {
+        "user_id": {
+          "type": "string",
+          "description": "Owner of the subscription"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "cost": {
+          "type": "number"
+        },
+        "billing_cycle": {
+          "type": "string",
+          "enum": ["monthly", "yearly"]
+        },
+        "category": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "next_renewal_date": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "canceled"]
+        },
+        "created_at": {
+          "type": "string"
+        }
+      },
+      "required": ["user_id", "name", "cost", "billing_cycle", "category", "next_renewal_date", "status", "created_at"]
+    }
+  },
+  "firestore": {
+    "subscriptions/{subscriptionId}": {
+      "schema": "subscription",
+      "description": "Stores user subscriptions"
+    }
+  }
+}

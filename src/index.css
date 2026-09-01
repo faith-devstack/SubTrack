@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "sans-serif";
+  
+  --color-background-primary: #121212;
+  --color-background-secondary: #181818;
+  --color-background-card: #1E1E1E;
+  
+  --color-border-card: #2A2A2A;
+  
+  --color-accent-primary-from: #00F5A0;
+  --color-accent-primary-to: #00D9CC;
+  --color-accent-secondary: #1A3C34;
+  
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #B3B3B3;
+  --color-text-muted: #777777;
+}
+
+@layer base {
+  body {
+    @apply bg-background-primary text-text-primary font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .text-gradient, .mint-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-accent-primary-from to-accent-primary-to;
+  }
+  .bg-gradient-primary, .mint-bg {
+    @apply bg-gradient-to-r from-accent-primary-from to-accent-primary-to;
+  }
+  .mint-border {
+    border: 1px solid transparent;
+    background-image: linear-gradient(var(--color-background-card), var(--color-background-card)), linear-gradient(to right, var(--color-accent-primary-from), var(--color-accent-primary-to));
+    background-origin: border-box;
+    background-clip: content-box, border-box;
+  }
+  .glass {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--color-border-card);
+  }
+  .badge {
+    font-size: 10px;
+    letter-spacing: 1px;
+    font-weight: 700;
+    color: var(--color-accent-primary-from);
+    background: rgba(0, 245, 160, 0.1);
+    padding: 6px 12px;
+    border-radius: 100px;
+    display: inline-block;
+    text-transform: uppercase;
+  }
+  .btn-primary {
+    @apply bg-gradient-to-r from-accent-primary-from to-accent-primary-to font-semibold rounded-lg text-background-primary flex items-center justify-center;
+    padding: 14px 28px;
+    font-size: 15px;
+    border: none;
+    cursor: pointer;
+  }
+  .btn-secondary {
+    @apply text-text-primary font-semibold rounded-lg flex items-center justify-center transition-colors hover:bg-background-secondary;
+    padding: 14px 28px;
+    font-size: 15px;
+    border: 1px solid var(--color-border-card);
+    background: transparent;
+    cursor: pointer;
+  }
+  .phone-frame {
+    width: 260px;
+    height: 520px;
+    background: #000;
+    border: 8px solid #222;
+    border-radius: 40px;
+    position: relative;
+    transform: rotateX(10deg) rotateY(-15deg) rotateZ(5deg);
+    box-shadow: 40px 40px 80px rgba(0,0,0,0.5), -1px -1px 2px rgba(255,255,255,0.1);
+    overflow: hidden;
+  }
+  .phone-glow {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(0, 245, 160, 0.15) 0%, transparent 70%);
+    z-index: -1;
+  }
+}
