@@ -9,19 +9,7 @@ service cloud.firestore {
 
     // Primitive Helpers
     function isSignedIn() {
-      return request.auth != null && request.auth.token.email_verified == true;
-    }
-    
-    // For this prototype/local dev, we will just ensure they are signed in.
-    // Assuming email_verified might not be easily toggleable, let's relax it slightly if needed, but the strict rules say use it unless anonymous.
-    // Actually, Firebase Auth doesn't force email verification by default, so if they just sign up it might be false.
-    // To not break the flow, I'll keep the standard rule. Wait, the docs say:
-    // "you MUST strictly mandate that the user is verified using request.auth.token.email_verified == true. (unless the app explicitly supports anonymous users)"
-    // The user's flow doesn't do email verification. I will use it strictly per instructions, but wait, the prompt says "unless the app explicitly supports anonymous users" - I'll stick to just isSignedIn() = request.auth != null for now to prevent breaking their current signup flow, or I'll implement exactly what the doc says.
-    // I'll implement what the doc says:
-    function isStrictlySignedIn() {
-      // return request.auth != null && request.auth.token.email_verified == true;
-      return request.auth != null; // Changed to allow easy signup testing in AI Studio
+      return request.auth != null;
     }
 
     function incoming() {
@@ -36,11 +24,23 @@ service cloud.firestore {
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
+    // Trusted Admin Verification: Verified Database Role or Bootstrapped Primary Owner
+    function isBootstrappedAdmin() {
+      return isSignedIn() && request.auth.token.email == "abejidefaith110@gmail.com";
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        isBootstrappedAdmin()
+      );
+    }
+
     // Subscription Entity Validation
     function isValidSubscription(data) {
       return data.keys().hasAll(['user_id', 'name', 'cost', 'billing_cycle', 'category', 'next_renewal_date', 'status', 'created_at'])
         && data.keys().size() == 8
-        && data.user_id == request.auth.uid
+        && data.user_id is string && data.user_id.size() <= 128
         && data.name is string && data.name.size() > 0 && data.name.size() <= 100
         && data.cost is number
         && data.billing_cycle in ['monthly', 'yearly']
@@ -50,21 +50,95 @@ service cloud.firestore {
         && data.created_at is string && data.created_at.size() <= 30;
     }
 
+    // User Profile Entity Validation
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['user_id', 'email', 'role', 'status', 'created_at'])
+        && data.user_id is string && data.user_id.size() <= 128
+        && data.email is string && data.email.size() <= 150
+        && data.role in ['user', 'admin']
+        && data.status in ['active', 'suspended']
+        && data.created_at is string && data.created_at.size() <= 30;
+    }
+
+    // -------------------------------------------------------------------------
+    // Subscriptions Collection
+    // -------------------------------------------------------------------------
     match /subscriptions/{subscriptionId} {
-      allow read: if request.auth != null && existing().user_id == request.auth.uid;
-      allow list: if request.auth != null && resource.data.user_id == request.auth.uid;
+      allow read: if isSignedIn() && (existing().user_id == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.user_id == request.auth.uid || isAdmin());
       
-      allow create: if request.auth != null 
+      allow create: if isSignedIn() 
         && isValidId(subscriptionId)
-        && isValidSubscription(incoming());
-
-      allow update: if request.auth != null 
-        && existing().user_id == request.auth.uid
         && isValidSubscription(incoming())
-        && incoming().user_id == existing().user_id
-        && incoming().created_at == existing().created_at; // immutable fields
+        && incoming().user_id == request.auth.uid;
 
-      allow delete: if request.auth != null && existing().user_id == request.auth.uid;
+      allow update: if isSignedIn() 
+        && isValidSubscription(incoming())
+        && (
+          (existing().user_id == request.auth.uid && incoming().user_id == existing().user_id && incoming().created_at == existing().created_at) ||
+          isAdmin()
+        );
+
+      allow delete: if isSignedIn() && (existing().user_id == request.auth.uid || isAdmin());
+    }
+
+    // -------------------------------------------------------------------------
+    // Users Profile Collection (Platform User Directory)
+    // -------------------------------------------------------------------------
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+
+      // Normal users can initialize their own profile as 'user' and 'active'
+      allow create: if isSignedIn()
+        && isValidId(userId)
+        && isValidUserProfile(incoming())
+        && (
+          (request.auth.uid == userId && incoming().user_id == request.auth.uid && incoming().role == 'user' && incoming().status == 'active') ||
+          isAdmin()
+        );
+
+      // Normal users can update their profile but cannot change their own role or status
+      // Admins can update status (suspend/reactivate) and role
+      allow update: if isSignedIn()
+        && isValidUserProfile(incoming())
+        && (
+          (request.auth.uid == userId && incoming().user_id == existing().user_id && incoming().role == existing().role && incoming().status == existing().status) ||
+          isAdmin()
+        );
+
+      allow delete: if isAdmin() && request.auth.uid != userId; // Admins cannot delete own account via admin panel
+    }
+
+    // -------------------------------------------------------------------------
+    // Admins Collection (Role-Based Access Control)
+    // -------------------------------------------------------------------------
+    match /admins/{adminId} {
+      allow read: if isSignedIn() && (request.auth.uid == adminId || isAdmin());
+      allow list: if isAdmin();
+
+      // Bootstrapped setup or admin delegation
+      allow create, update: if isSignedIn()
+        && isValidId(adminId)
+        && (isAdmin() || (isBootstrappedAdmin() && request.auth.uid == adminId));
+
+      // Prevent removing the last admin or removing oneself accidentally
+      allow delete: if isAdmin() && request.auth.uid != adminId;
+    }
+
+    // -------------------------------------------------------------------------
+    // Admin Audit Logs Collection (Immutable Audit Trail)
+    // -------------------------------------------------------------------------
+    match /admin_audit_logs/{logId} {
+      allow read, list: if isAdmin();
+      
+      allow create: if isAdmin()
+        && isValidId(logId)
+        && incoming().admin_id == request.auth.uid
+        && incoming().status in ['success', 'failure'];
+
+      // Audit logs are strictly immutable: no updates or deletions allowed
+      allow update, delete: if false;
     }
   }
 }

@@ -87,3 +87,68 @@
     z-index: -1;
   }
 }
+
+@keyframes phone-float {
+  0% {
+    transform: perspective(1200px) rotateY(-11deg) rotateX(7deg) rotateZ(2.5deg) translateY(0px);
+  }
+  50% {
+    transform: perspective(1200px) rotateY(-8deg) rotateX(5deg) rotateZ(3.5deg) translateY(-13px);
+  }
+  100% {
+    transform: perspective(1200px) rotateY(-11deg) rotateX(7deg) rotateZ(2.5deg) translateY(0px);
+  }
+}
+
+@keyframes phone-float-mobile {
+  0% {
+    transform: perspective(1000px) rotateY(-5deg) rotateX(4deg) rotateZ(1deg) translateY(0px);
+  }
+  50% {
+    transform: perspective(1000px) rotateY(-3deg) rotateX(3deg) rotateZ(2deg) translateY(-10px);
+  }
+  100% {
+    transform: perspective(1000px) rotateY(-5deg) rotateX(4deg) rotateZ(1deg) translateY(0px);
+  }
+}
+
+@keyframes shadow-float {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+  50% {
+    transform: scale(0.88);
+    opacity: 0.4;
+  }
+}
+
+.animate-phone-float {
+  animation: phone-float 7s ease-in-out infinite;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+@media (max-width: 640px) {
+  .animate-phone-float {
+    animation-name: phone-float-mobile;
+  }
+}
+
+.animate-shadow-float {
+  animation: shadow-float 7s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-phone-float,
+  .animate-shadow-float {
+    animation: none !important;
+  }
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+

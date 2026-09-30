@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Activity, LayoutDashboard, List, PieChart, Settings, LogOut, Menu, X, User } from 'lucide-react';
+import { Activity, LayoutDashboard, List, PieChart, Settings, LogOut, X, User, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '../../lib/utils';
 
@@ -10,7 +10,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
-  const { user, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
   
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
@@ -67,6 +67,24 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               {item.name}
             </NavLink>
           ))}
+
+          {/* Privileged Admin Link (Visible only to verified administrators) */}
+          {isAdmin && (
+            <div className="pt-3 mt-3 border-t border-border-card/60">
+              <NavLink
+                to="/admin"
+                className={({ isActive }) => cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors",
+                  isActive 
+                    ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" 
+                    : "text-amber-400/90 hover:text-amber-300 hover:bg-amber-500/10"
+                )}
+              >
+                <ShieldAlert className="w-5 h-5 text-amber-400" />
+                <span>Admin Console</span>
+              </NavLink>
+            </div>
+          )}
         </div>
 
         {/* User / Logout */}
@@ -79,14 +97,18 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               <p className="text-sm font-medium text-text-primary truncate">
                 {user?.email}
               </p>
-              <p className="text-xs text-text-muted truncate">
-                Free Plan
+              <p className="text-xs text-text-muted truncate flex items-center gap-1">
+                {isAdmin ? (
+                  <span className="text-amber-400 font-semibold">Administrator</span>
+                ) : (
+                  <span>Standard Plan</span>
+                )}
               </p>
             </div>
           </div>
           <button
             onClick={signOut}
-            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-red-400 hover:bg-red-400/10 transition-colors"
+            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-red-400 hover:bg-red-400/10 transition-colors cursor-pointer"
           >
             <LogOut className="w-5 h-5" />
             Log out

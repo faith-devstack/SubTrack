@@ -36,12 +36,114 @@
         }
       },
       "required": ["user_id", "name", "cost", "billing_cycle", "category", "next_renewal_date", "status", "created_at"]
+    },
+    "userProfile": {
+      "title": "UserProfile",
+      "description": "Registered user account profile and platform status",
+      "type": "object",
+      "properties": {
+        "user_id": {
+          "type": "string",
+          "description": "The Firebase Auth UID"
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address"
+        },
+        "display_name": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "admin"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "suspended"]
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "last_login_at": {
+          "type": "string"
+        }
+      },
+      "required": ["user_id", "email", "role", "status", "created_at"]
+    },
+    "adminRole": {
+      "title": "AdminRole",
+      "description": "Privileged administrator identity assignment",
+      "type": "object",
+      "properties": {
+        "user_id": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin"]
+        },
+        "granted_at": {
+          "type": "string"
+        },
+        "granted_by": {
+          "type": "string"
+        }
+      },
+      "required": ["user_id", "email", "role", "granted_at"]
+    },
+    "adminAuditLog": {
+      "title": "AdminAuditLog",
+      "description": "Audit trail record of administrative actions",
+      "type": "object",
+      "properties": {
+        "admin_id": {
+          "type": "string"
+        },
+        "admin_email": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "target_user_id": {
+          "type": "string"
+        },
+        "details": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["success", "failure"]
+        }
+      },
+      "required": ["admin_id", "admin_email", "action", "timestamp", "status"]
     }
   },
   "firestore": {
     "subscriptions/{subscriptionId}": {
       "schema": "subscription",
       "description": "Stores user subscriptions"
+    },
+    "users/{userId}": {
+      "schema": "userProfile",
+      "description": "Stores registered user profiles and account statuses"
+    },
+    "admins/{adminId}": {
+      "schema": "adminRole",
+      "description": "Stores privileged administrator assignments keyed by auth UID"
+    },
+    "admin_audit_logs/{logId}": {
+      "schema": "adminAuditLog",
+      "description": "Stores immutable audit logs of administrative actions"
     }
   }
 }
